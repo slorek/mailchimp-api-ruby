@@ -224,6 +224,7 @@ module Mailchimp
         #     - [String] name a display name for the account - empty first/last names will return the username
         #     - [String] email the email tied to the account used for passwords resets and the ilk
         #     - [String] role the role assigned to the account
+        #     - [String] avatar if available, the url for the login's avatar
         def logins()
             _params = {}
             return @master.call 'users/logins', _params
@@ -759,8 +760,8 @@ module Mailchimp
 
         # Get the most recent 100 activities for particular list members (open, click, bounce, unsub, abuse, sent to, etc.)
         # @param [String] id the list id to connect to. Get by calling lists()
-        # @param [Array] emails an array of up to 50 email address struct to retrieve activity information for
-        #     - [String] email an email address
+        # @param [Array] emails an array of up to 50 email structs, each with with one of the following keys
+        #     - [String] email an email address - for new subscribers obviously this should be used
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
         #     - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
         # @return [Hash] of data and success/error counts
@@ -792,8 +793,8 @@ module Mailchimp
 
         # Get all the information for particular members of a list
         # @param [String] id the list id to connect to. Get by calling lists()
-        # @param [Array] emails an array of up to 50 email address struct to retrieve member information for
-        #     - [String] email an email address
+        # @param [Array] emails an array of up to 50 email structs, each with with one of the following keys
+        #     - [String] email an email address - for new subscribers obviously this should be used
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
         #     - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
         # @return [Hash] of data and success/error counts
@@ -996,7 +997,7 @@ module Mailchimp
 
         # Save a segment against a list for later use. There is no limit to the number of segments which can be saved. Static Segments <strong>are not</strong> tied to any merge data, interest groups, etc. They essentially allow you to configure an unlimited number of custom segments which will have standard performance. When using proper segments, Static Segments are one of the available options for segmentation just as if you used a merge var (and they can be used with other segmentation options), though performance may degrade at that point.
         # @param [String] id the list id to connect to. Get by calling lists()
-        # @param [String] name a unique name per list for the segment - 50 byte maximum length, anything longer will throw an error
+        # @param [String] name a unique name per list for the segment - 100 byte maximum length, anything longer will throw an error
         # @return [Hash] with a single entry:
         #     - [Int] id the id of the new segment, otherwise an error will be thrown.
         def static_segment_add(id, name)
@@ -1395,7 +1396,7 @@ module Mailchimp
         end
 
         # Get the list of campaigns and their details matching the specified filters
-        # @param [Array] filters a hash of filters to apply to this query - all are optional:
+        # @param [Hash] filters a struct of filters to apply to this query - all are optional:
         #     - [String] campaign_id optional - return the campaign using a know campaign_id.  Accepts multiples separated by commas when not using exact matching.
         #     - [String] parent_id optional - return the child campaigns using a known parent campaign_id.  Accepts multiples separated by commas when not using exact matching.
         #     - [String] list_id optional - the list to send this campaign to - get lists using lists(). Accepts multiples separated by commas when not using exact matching.
@@ -1624,8 +1625,8 @@ module Mailchimp
 
         # Add VIPs (previously called Golden Monkeys)
         # @param [String] id the list id to connect to. Get by calling lists()
-        # @param [Array] emails an array of up to 50 email address structs to add
-        #     - [String] email an email address
+        # @param [Array] emails an array of up to 50 email address structs to add, each with with one of the following keys
+        #     - [String] email an email address - for new subscribers obviously this should be used
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
         #     - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
         # @return [Hash] of data and success/error counts
@@ -1650,8 +1651,8 @@ module Mailchimp
 
         # Remove VIPs - this does not affect list membership
         # @param [String] id the list id to connect to. Get by calling lists()
-        # @param [Array] emails an array of up to 50 email address structs to remove
-        #     - [String] email an email address
+        # @param [Array] emails an array of up to 50 email address structs to remove, each with with one of the following keys
+        #     - [String] email an email address - for new subscribers obviously this should be used
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
         #     - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
         # @return [Hash] of data and success/error counts
