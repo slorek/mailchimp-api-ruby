@@ -152,9 +152,9 @@ module Mailchimp
                     raise Error, "We received an unexpected error: #{body}"
                 end
                 if error_map[error_info['name']]
-                    raise error_map[error_info['name']], error_info['message']
+                    raise error_map[error_info['name']], error_info['error']
                 else
-                    raise Error, error_info['message']
+                    raise Error, error_info['error']
                 end
             rescue JSON::ParserError
                 raise Error, "We received an unexpected error: #{body}"

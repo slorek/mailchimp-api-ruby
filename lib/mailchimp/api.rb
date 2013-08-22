@@ -976,7 +976,7 @@ module Mailchimp
         #         - [Array] merge_vars of structs for each merge var
         #             - [String] name Name of the merge field
         #             - [Bool] req Denotes whether the field is required (true) or not (false)
-        #             - [String] field_type The "data type" of this merge var. One of: email, text, number, radio, dropdown, date, address, phone, url, imageurl
+        #             - [String] field_type The "data type" of this merge var. One of the options accepted by field_type in lists/merge-var-add
         #             - [Bool] public Whether or not this field is visible to list subscribers
         #             - [Bool] show Whether the list owner has this field displayed on their list dashboard
         #             - [String] order The order the list owner has set this field to display in
@@ -1478,7 +1478,12 @@ module Mailchimp
 
         # Returns information on whether a campaign is ready to send and possible issues we may have detected with it - very similar to the confirmation step in the app.
         # @param [String] cid the Campaign Id to replicate
-        # @return [Hash] the matching campaign's details - will return same data as single campaign from campaigns/list()
+        # @return [Hash] containing:
+        #     - [Bool] is_ready whether or not you're going to be able to send this campaign
+        #     - [Array] items an array of structs explaining basically what the app's confirmation step would
+        #         - [String] type the item type - generally success, warning, or error
+        #         - [String] heading the item's heading in the app
+        #         - [String] details the item's details from the app, sans any html tags/links
         def ready(cid)
             _params = {:cid => cid}
             return @master.call 'campaigns/ready', _params
