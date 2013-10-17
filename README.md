@@ -8,6 +8,14 @@ This can be installed via our [gem](https://rubygems.org/gems/mailchimp-api) usi
 ```
 $ gem install mailchimp-api
 ```
+Then you'll need to `require 'mailchimp'` in your code.
+
+Alternatively, if you're using a recent version of Bundler, you can add the following to your Gemfile:
+```
+gem 'mailchimp-api', require: 'mailchimp'
+```
+Then `bundle install` and you're all set.
+
 
 ---
 

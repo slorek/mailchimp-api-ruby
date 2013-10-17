@@ -1,5 +1,5 @@
 module Mailchimp
-    class Error < Exception
+    class Error < StandardError
     end
     class ValidationError < Error
     end

@@ -19,7 +19,7 @@ module Mailchimp
         end
 
         # Delete a campaign, autoresponder, or template folder. Note that this will simply make whatever was in the folder appear unfiled, no other data is removed
-        # @param [Int] fid the folder id to delete - retrieve from folders()
+        # @param [Int] fid the folder id to delete - retrieve from folders/list()
         # @param [String] type the type of folder to delete - either "campaign", "autoresponder", or "template"
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
@@ -31,7 +31,7 @@ module Mailchimp
         # List all the folders of a certain type
         # @param [String] type the type of folders to return "campaign", "autoresponder", or "template"
         # @return [Array] structs for each folder, including:
-        #     - [Int] folder_id Folder Id for the given folder, this can be used in the campaigns() function to filter on.
+        #     - [Int] folder_id Folder Id for the given folder, this can be used in the campaigns/list() function to filter on.
         #     - [String] name Name of the given folder
         #     - [String] date_created The date/time the folder was created
         #     - [String] type The type of the folders being returned, just to make sure you know.
@@ -42,7 +42,7 @@ module Mailchimp
         end
 
         # Update the name of a folder for campaigns, autoresponders, or templates
-        # @param [Int] fid the folder id to update - retrieve from folders()
+        # @param [Int] fid the folder id to update - retrieve from folders/list()
         # @param [String] name a new, unique name for the folder (max 100 bytes)
         # @param [String] type the type of folder to update - one of "campaign", "autoresponder", or "template".
         # @return [Hash] with a single entry:
@@ -81,7 +81,7 @@ module Mailchimp
         end
 
         # Pull details for a specific template to help support editing
-        # @param [Int] template_id the template id - get from templates()
+        # @param [Int] template_id the template id - get from templates/list()
         # @param [String] type optional the template type to load - one of 'user', 'gallery', 'base', defaults to user.
         # @return [Hash] info to be used when editing
         #     - [Hash] default_content the default content broken down into the named editable sections for the template - dependant upon template, so not documented
@@ -228,6 +228,19 @@ module Mailchimp
         def logins()
             _params = {}
             return @master.call 'users/logins', _params
+        end
+
+        # Retrieve the profile for the login owning the provided API Key
+        # @return [Hash] the current user's details, including:
+        #     - [Int] id the login id for this login
+        #     - [String] username the username used to log in
+        #     - [String] name a display name for the account - empty first/last names will return the username
+        #     - [String] email the email tied to the account used for passwords resets and the ilk
+        #     - [String] role the role assigned to the account
+        #     - [String] avatar if available, the url for the login's avatar
+        def profile()
+            _params = {}
+            return @master.call 'users/profile', _params
         end
 
     end
@@ -409,7 +422,7 @@ module Mailchimp
         #     - [Int] total total campaigns matching
         #     - [Array] results matching campaigns and snippets
         #     - [String] snippet the matching snippet for the campaign
-        #     - [Hash] campaign the matching campaign's details - will return same data as single campaign from campaigns()
+        #     - [Hash] campaign the matching campaign's details - will return same data as single campaign from campaigns/list()
         #     - [Hash] summary if available, the matching campaign's report/summary data, other wise empty
         def search_campaigns(query, offset=0, snip_start=nil, snip_end=nil)
             _params = {:query => query, :offset => offset, :snip_start => snip_start, :snip_end => snip_end}
@@ -418,15 +431,15 @@ module Mailchimp
 
         # Search account wide or on a specific list using the specified query terms
         # @param [String] query terms to search on, <a href="http://kb.mailchimp.com/article/i-cant-find-a-recipient-on-my-list" target="_blank">just like you do in the app</a>
-        # @param [String] id optional the list id to limit the search to. Get by calling lists()
+        # @param [String] id optional the list id to limit the search to. Get by calling lists/list()
         # @param [Int] offset optional the paging offset to use if more than 100 records match
         # @return [Hash] An array of both exact matches and partial matches over a full search
         #     - [Hash] exact_matches containing the total matches and current results
         #     - [Int] total total members matching
-        #     - [Array] members each entry will be struct matching the data format for a single member as returned by listMemberInfo()
+        #     - [Array] members each entry will be struct matching the data format for a single member as returned by lists/member-info()
         #     - [Hash] full_search containing the total matches and current results
         #     - [Int] total total members matching
-        #     - [Array] members each entry will be struct matching  the data format for a single member as returned by listMemberInfo()
+        #     - [Array] members each entry will be struct matching  the data format for a single member as returned by lists/member-info()
         def search_members(query, id=nil, offset=0)
             _params = {:query => query, :id => id, :offset => offset}
             return @master.call 'helper/search-members', _params
@@ -543,24 +556,24 @@ module Mailchimp
         end
 
         # Get all email addresses that complained about a campaign sent to a list
-        # @param [String] id the list id to pull abuse reports for (can be gathered using lists())
+        # @param [String] id the list id to pull abuse reports for (can be gathered using lists/list())
         # @param [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
         # @param [Int] limit optional for large data sets, the number of results to return - defaults to 500, upper limit set at 1000
         # @param [String] since optional pull only messages since this time - 24 hour format in <strong>GMT</strong>, eg "2013-12-30 20:30:00"
         # @return [Hash] the total of all reports and the specific reports reports this page
         #     - [Int] total the total number of matching abuse reports
         #     - [Array] data structs for the actual data for each reports, including:
-        #         - [String] date date/time the abuse report was received and processed
+        #         - [String] date date+time the abuse report was received and processed
         #         - [String] email the email address that reported abuse
         #         - [String] campaign_id the unique id for the campaign that report was made against
-        #         - [String] type an internal type generally specifying the orginating mail provider - may not be useful outside of filling report views
+        #         - [String] type an internal type generally specifying the originating mail provider - may not be useful outside of filling report views
         def abuse_reports(id, start=0, limit=500, since=nil)
             _params = {:id => id, :start => start, :limit => limit, :since => since}
             return @master.call 'lists/abuse-reports', _params
         end
 
         # Access up to the previous 180 days of daily detailed aggregated activity stats for a given list. Does not include AutoResponder activity.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @return [Array] of structs containing daily values, each containing:
         def activity(id)
             _params = {:id => id}
@@ -568,7 +581,7 @@ module Mailchimp
         end
 
         # Subscribe a batch of email addresses to a list at once. If you are using a serialized version of the API, we strongly suggest that you only run this method as a POST request, and <em>not</em> a GET request. Maximum batch sizes vary based on the amount of data in each record, though you should cap them at 5k - 10k records, depending on your experience. These calls are also long, so be sure you increase your timeout values.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [Array] batch an array of structs for each address using the following keys:
         #     - [Hash] email a struct with one of the following keys - failing to provide anything will produce an error relating to the email address. Provide multiples and we'll use the first we see in this same order.
         #         - [String] email an email address
@@ -605,7 +618,7 @@ module Mailchimp
         end
 
         # Unsubscribe a batch of email addresses from a list
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [Array] batch array of structs to unsubscribe, each with one of the following keys - failing to provide anything will produce an error relating to the email address. Provide multiples and we'll use the first we see in this same order.
         #     - [String] email an email address
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
@@ -630,7 +643,7 @@ module Mailchimp
         end
 
         # Retrieve the clients that the list's subscribers have been tagged as being used based on user agents seen. Made possible by <a href="http://user-agent-string.info" target="_blank">user-agent-string.info</a>
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @return [Hash] the desktop and mobile user agents in use on the list
         #     - [Hash] desktop desktop user agents and percentages
         #         - [Double] penetration the percent of desktop clients in use
@@ -652,7 +665,7 @@ module Mailchimp
         end
 
         # Access the Growth History by Month in aggregate or for a given list.
-        # @param [String] id optional - if provided, the list id to connect to. Get by calling lists/list. Otherwise the aggregate for the account.
+        # @param [String] id optional - if provided, the list id to connect to. Get by calling lists/list(). Otherwise the aggregate for the account.
         # @return [Array] array of structs containing months and growth data
         #     - [String] month The Year and Month in question using YYYY-MM format
         #     - [Int] existing number of existing subscribers to start the month
@@ -664,7 +677,7 @@ module Mailchimp
         end
 
         # Get the list of interest groupings for a given list, including the label, form information, and included groups for each
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [Bool] counts optional whether or not to return subscriber counts for each group. defaults to false since that slows this call down a ton for large lists.
         # @return [Array] array of structs of the interest groupings for the list
         #     - [Int] id The id for the Grouping
@@ -681,9 +694,9 @@ module Mailchimp
         end
 
         # Add a single Interest Group - if interest groups for the List are not yet enabled, adding the first group will automatically turn them on.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] group_name the interest group to add - group names must be unique within a grouping
-        # @param [Int] grouping_id optional The grouping to add the new group to - get using listInterestGrouping() . If not supplied, the first grouping on the list is used.
+        # @param [Int] grouping_id optional The grouping to add the new group to - get using lists/interest-groupings() . If not supplied, the first grouping on the list is used.
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
         def interest_group_add(id, group_name, grouping_id=nil)
@@ -692,9 +705,9 @@ module Mailchimp
         end
 
         # Delete a single Interest Group - if the last group for a list is deleted, this will also turn groups for the list off.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] group_name the interest group to delete
-        # @param [Int] grouping_id The grouping to delete the group from - get using listInterestGrouping() . If not supplied, the first grouping on the list is used.
+        # @param [Int] grouping_id The grouping to delete the group from - get using lists/interest-groupings() . If not supplied, the first grouping on the list is used.
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
         def interest_group_del(id, group_name, grouping_id=nil)
@@ -703,10 +716,10 @@ module Mailchimp
         end
 
         # Change the name of an Interest Group
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] old_name the interest group name to be changed
         # @param [String] new_name the new interest group name to be set
-        # @param [Int] grouping_id optional The grouping to delete the group from - get using listInterestGrouping() . If not supplied, the first grouping on the list is used.
+        # @param [Int] grouping_id optional The grouping to delete the group from - get using lists/interest-groupings() . If not supplied, the first grouping on the list is used.
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
         def interest_group_update(id, old_name, new_name, grouping_id=nil)
@@ -715,7 +728,7 @@ module Mailchimp
         end
 
         # Add a new Interest Grouping - if interest groups for the List are not yet enabled, adding the first grouping will automatically turn them on.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] name the interest grouping to add - grouping names must be unique
         # @param [String] type The type of the grouping to add - one of "checkboxes", "hidden", "dropdown", "radio"
         # @param [Array] groups The lists of initial group names to be added - at least 1 is required and the names must be unique within a grouping. If the number takes you over the 60 group limit, an error will be thrown.
@@ -727,7 +740,7 @@ module Mailchimp
         end
 
         # Delete an existing Interest Grouping - this will permanently delete all contained interest groups and will remove those selections from all list members
-        # @param [Int] grouping_id the interest grouping id - get from listInterestGroupings()
+        # @param [Int] grouping_id the interest grouping id - get from lists/interest-groupings()
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
         def interest_grouping_del(grouping_id)
@@ -736,7 +749,7 @@ module Mailchimp
         end
 
         # Update an existing Interest Grouping
-        # @param [Int] grouping_id the interest grouping id - get from listInterestGroupings()
+        # @param [Int] grouping_id the interest grouping id - get from lists/interest-groupings()
         # @param [String] name The name of the field to update - either "name" or "type". Groups within the grouping should be manipulated using the standard listInterestGroup* methods
         # @param [String] value The new value of the field. Grouping names must be unique - only "hidden" and "checkboxes" grouping types can be converted between each other.
         # @return [Hash] with a single entry:
@@ -747,7 +760,7 @@ module Mailchimp
         end
 
         # Retrieve the locations (countries) that the list's subscribers have been tagged to based on geocoding their IP address
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @return [Array] array of locations
         #     - [String] country the country name
         #     - [String] cc the ISO 3166 2 digit country code
@@ -759,7 +772,7 @@ module Mailchimp
         end
 
         # Get the most recent 100 activities for particular list members (open, click, bounce, unsub, abuse, sent to, etc.)
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [Array] emails an array of up to 50 email structs, each with with one of the following keys
         #     - [String] email an email address - for new subscribers obviously this should be used
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
@@ -781,7 +794,7 @@ module Mailchimp
         #             - [String] leid the list member's truly unique id
         #         - [Array] activity an array of structs containing the activity, including:
         #             - [String] action The action name, one of: open, click, bounce, unsub, abuse, sent, queued, ecomm, mandrill_send, mandrill_hard_bounce, mandrill_soft_bounce, mandrill_open, mandrill_click, mandrill_spam, mandrill_unsub, mandrill_reject
-        #             - [String] timestamp The date/time of the action (GMT)
+        #             - [String] timestamp The date+time of the action (GMT)
         #             - [String] url For click actions, the url clicked, otherwise this is empty
         #             - [String] type If there's extra bounce, unsub, etc data it will show up here.
         #             - [String] campaign_id The campaign id the action was related to, if it exists - otherwise empty (ie, direct unsub from list)
@@ -792,7 +805,7 @@ module Mailchimp
         end
 
         # Get all the information for particular members of a list
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [Array] emails an array of up to 50 email structs, each with with one of the following keys
         #     - [String] email an email address - for new subscribers obviously this should be used
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
@@ -819,15 +832,15 @@ module Mailchimp
         #                     - [Bool] interested whether the member has this group selected
         #         - [String] status The subscription status for this email address, either pending, subscribed, unsubscribed, or cleaned
         #         - [String] ip_signup IP Address this address signed up from. This may be blank if single optin is used.
-        #         - [String] timestamp_signup The date/time the double optin was initiated. This may be blank if single optin is used.
+        #         - [String] timestamp_signup The date+time the double optin was initiated. This may be blank if single optin is used.
         #         - [String] ip_opt IP Address this address opted in from.
-        #         - [String] timestamp_opt The date/time the optin completed
+        #         - [String] timestamp_opt The date+time the optin completed
         #         - [Int] member_rating the rating of the subscriber. This will be 1 - 5 as described <a href="http://eepurl.com/f-2P" target="_blank">here</a>
         #         - [String] campaign_id If the user is unsubscribed and they unsubscribed from a specific campaign, that campaign_id will be listed, otherwise this is not returned.
         #         - [Array] lists An array of structs for the other lists this member belongs to
         #             - [String] id the list id
         #             - [String] status the members status on that list
-        #         - [String] timestamp The date/time this email address entered it's current status
+        #         - [String] timestamp The date+time this email address entered it's current status
         #         - [String] info_changed The last time this record was changed. If the record is old enough, this may be blank.
         #         - [Int] web_id The Member id used in our web app, allows you to create a link directly to it
         #         - [Int] leid The Member id used in our web app, allows you to create a link directly to it
@@ -861,8 +874,8 @@ module Mailchimp
             return @master.call 'lists/member-info', _params
         end
 
-        # Get all of the list members for a list that are of a particular status and potentially matching a segment. This will cause locking, so don't run multiples at once. Are you trying to get a dump including lots of merge data or specific members of a list? If so, checkout the <a href="export/1.0/list.func.php">List Export API</a>
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # Get all of the list members for a list that are of a particular status and potentially matching a segment. This will cause locking, so don't run multiples at once. Are you trying to get a dump including lots of merge data or specific members of a list? If so, checkout the <a href="/export/1.0/list.func.php">List Export API</a>
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] status the status to get members for - one of(subscribed, unsubscribed, <a target="_blank" href="http://eepurl.com/gWOO">cleaned</a>), defaults to subscribed
         # @param [Hash] opts various options for controlling returned data
         #     - [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
@@ -879,16 +892,16 @@ module Mailchimp
         end
 
         # Add a new merge tag to a given list
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] tag The merge tag to add, e.g. FNAME. 10 bytes max, valid characters: "A-Z 0-9 _" no spaces, dashes, etc. Some tags and prefixes are <a href="http://kb.mailchimp.com/article/i-got-a-message-saying-that-my-list-field-name-is-reserved-and-cant-be-used" target="_blank">reserved</a>
         # @param [String] name The long description of the tag being added, used for user displays - max 50 bytes
-        # @param [Array] options optional Various options for this merge var. <em>note:</em> for historical purposes this can also take a "boolean"
+        # @param [Hash] options optional Various options for this merge var
         #     - [String] field_type optional one of: text, number, radio, dropdown, date, address, phone, url, imageurl, zip, birthday - defaults to text
         #     - [Boolean] req optional indicates whether the field is required - defaults to false
         #     - [Boolean] public optional indicates whether the field is displayed in public - defaults to true
         #     - [Boolean] show optional indicates whether the field is displayed in the app's list member view - defaults to true
         #     - [Int] order The order this merge tag should be displayed in - this will cause existing values to be reset so this fits
-        #     - [String] default_value optional the default value for the field. See subscribe() for formatting info. Defaults to blank - max 255 bytes
+        #     - [String] default_value optional the default value for the field. See lists/subscribe() for formatting info. Defaults to blank - max 255 bytes
         #     - [String] helptext optional the help text to be used with some newer forms. Defaults to blank - max 255 bytes
         #     - [Array] choices optional kind of - an array of strings to use as the choices for radio and dropdown type fields
         #     - [String] dateformat optional only valid for birthday and date fields. For birthday type, must be "MM/DD" (default) or "DD/MM". For date type, must be "MM/DD/YYYY" (default) or "DD/MM/YYYY". Any other values will be converted to the default.
@@ -904,7 +917,7 @@ module Mailchimp
         #     - [String] default The default value for this field
         #     - [String] helptext The helptext for this field
         #     - [String] size The width of the field to be used
-        #     - [String] tag The merge tag that's used for forms and subscribe() and updateMember()
+        #     - [String] tag The merge tag that's used for forms and lists/subscribe() and lists/update-member()
         #     - [Array] choices the options available for radio and dropdown field types
         #     - [Int] id an unchanging id for the merge var
         def merge_var_add(id, tag, name, options=[])
@@ -913,7 +926,7 @@ module Mailchimp
         end
 
         # Delete a merge tag from a given list and all its members. Seriously - the data is removed from all members as well! Note that on large lists this method may seem a bit slower than calls you typically make.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] tag The merge tag to delete
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
@@ -923,7 +936,7 @@ module Mailchimp
         end
 
         # Completely resets all data stored in a merge var on a list. All data is removed and this action can not be undone.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] tag The merge tag to reset
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
@@ -933,9 +946,9 @@ module Mailchimp
         end
 
         # Sets a particular merge var to the specified value for every list member. Only merge var ids 1 - 30 may be modified this way. This is generally a dirty method unless you're fixing data since you should probably be using default_values and/or conditional content. as with lists/merge-var-reset(), this can not be undone.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] tag The merge tag to reset
-        # @param [String] value The value to set - see subscribe() for formatting. Must validate to something non-empty.
+        # @param [String] value The value to set - see lists/subscribe() for formatting. Must validate to something non-empty.
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
         def merge_var_set(id, tag, value)
@@ -944,9 +957,9 @@ module Mailchimp
         end
 
         # Update most parameters for a merge tag on a given list. You cannot currently change the merge type
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] tag The merge tag to update
-        # @param [Hash] options The options to change for a merge var. See listMergeVarAdd() for valid options. "tag" and "name" may also be used here.
+        # @param [Hash] options The options to change for a merge var. See lists/merge-var-add() for valid options. "tag" and "name" may also be used here.
         # @return [Hash] the full data for the new merge var, just like merge-vars returns
         #     - [String] name Name/description of the merge field
         #     - [Bool] req Denotes whether the field is required (true) or not (false)
@@ -957,7 +970,7 @@ module Mailchimp
         #     - [String] default The default value for this field
         #     - [String] helptext The helptext for this field
         #     - [String] size The width of the field to be used
-        #     - [String] tag The merge tag that's used for forms and subscribe() and updateMember()
+        #     - [String] tag The merge tag that's used for forms and lists/subscribe() and lists/update-member()
         #     - [Array] choices the options available for radio and dropdown field types
         #     - [Int] id an unchanging id for the merge var
         def merge_var_update(id, tag, options)
@@ -966,7 +979,7 @@ module Mailchimp
         end
 
         # Get the list of merge tags for a given list, including their name, tag, and required setting
-        # @param [Array] id the list ids to retrieve merge vars for. Get by calling lists() - max of 100
+        # @param [Array] id the list ids to retrieve merge vars for. Get by calling lists/list() - max of 100
         # @return [Hash] of data and success/error counts
         #     - [Int] success_count the number of subscribers successfully found on the list
         #     - [Int] error_count the number of subscribers who were not found on the list
@@ -983,7 +996,7 @@ module Mailchimp
         #             - [String] default The default value the list owner has set for this field
         #             - [String] helptext The helptext for this field
         #             - [String] size The width of the field to be used
-        #             - [String] tag The merge tag that's used for forms and listSubscribe() and listUpdateMember()
+        #             - [String] tag The merge tag that's used for forms and lists/subscribe() and listUpdateMember()
         #             - [Array] choices For radio and dropdown field types, an array of the options available
         #             - [Int] id an unchanging id for the merge var
         #     - [Array] errors of error structs
@@ -995,8 +1008,73 @@ module Mailchimp
             return @master.call 'lists/merge-vars', _params
         end
 
+        # Retrieve all of Segments for a list.
+        # @param [String] id the list id to connect to. Get by calling lists/list()
+        # @param [String] type optional, if specified should be "static" or "saved" and will limit the returned entries to that type
+        # @return [Hash] with 2 keys:
+        #     - [Int] static.id the id of the segment
+        #     - [String] created_date the date+time the segment was created
+        #     - [String] last_update the date+time the segment was last updated (add or del)
+        def segments(id, type=nil)
+            _params = {:id => id, :type => type}
+            return @master.call 'lists/segments', _params
+        end
+
+        # Save a segment against a list for later use. There is no limit to the number of segments which can be saved. Static Segments <strong>are not</strong> tied to any merge data, interest groups, etc. They essentially allow you to configure an unlimited number of custom segments which will have standard performance. When using proper segments, Static Segments are one of the available options for segmentation just as if you used a merge var (and they can be used with other segmentation options), though performance may degrade at that point. Saved Segments (called "auto-updating" in the app) are essentially just the match+conditions typically used.
+        # @param [String] id the list id to connect to. Get by calling lists/list()
+        # @param [Hash] opts various options for the new segment
+        #     - [String] type either "static" or "saved"
+        #     - [String] name a unique name per list for the segment - 100 byte maximum length, anything longer will throw an error
+        #     - [Hash] segment_opts for "saved" only, the standard segment match+conditions, just like campaigns/segment-test
+        #         - [String] match "any" or "all"
+        #         - [Array] conditions structs for each condition, just like campaigns/segment-test
+        # @return [Hash] with a single entry:
+        #     - [Int] id the id of the new segment, otherwise an error will be thrown.
+        def segment_add(id, opts)
+            _params = {:id => id, :opts => opts}
+            return @master.call 'lists/segment-add', _params
+        end
+
+        # Delete a segment. Note that this will, of course, remove any member affiliations with any static segments deleted
+        # @param [String] id the list id to connect to. Get by calling lists/list()
+        # @param [Int] seg_id the id of the static segment to delete - get from lists/static-segments()
+        # @return [Hash] with a single entry:
+        #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
+        def segment_del(id, seg_id)
+            _params = {:id => id, :seg_id => seg_id}
+            return @master.call 'lists/segment-del', _params
+        end
+
+        # Allows one to test their segmentation rules before creating a campaign using them - this is no different from campaigns/segment-test() and will eventually replace it. For the time being, the crazy segmenting condition documentation will continue to live over there.
+        # @param [String] list_id the list to test segmentation on - get lists using lists/list()
+        # @param [Hash] options with 1 or 2 keys:
+        #     - [String] saved_segment_id a saved segment id from lists/segments() - this will take precendence, otherwise the match+conditions are required.
+        #     - [String] match controls whether to use AND or OR when applying your options - expects "<strong>any</strong>" (for OR) or "<strong>all</strong>" (for AND)
+        #     - [Array] conditions of up to 5 structs for different criteria to apply while segmenting. Each criteria row must contain 3 keys - "<strong>field</strong>", "<strong>op</strong>", and "<strong>value</strong>" - and possibly a fourth, "<strong>extra</strong>", based on these definitions:
+        # @return [Hash] with a single entry:
+        #     - [Int] total The total number of subscribers matching your segmentation options
+        def segment_test(list_id, options)
+            _params = {:list_id => list_id, :options => options}
+            return @master.call 'lists/segment-test', _params
+        end
+
+        # Update an existing segment. The list and type can not be changed.
+        # @param [String] id the list id to connect to. Get by calling lists/list()
+        # @param [Int] seg_id the segment to updated. Get by calling lists/segments()
+        # @param [Hash] opts various options to update
+        #     - [String] name a unique name per list for the segment - 100 byte maximum length, anything longer will throw an error
+        #     - [Hash] segment_opts for "saved" only, the standard segment match+conditions, just like campaigns/segment-test
+        #         - [Hash] match "any" or "all"
+        #         - [Array] conditions structs for each condition, just like campaigns/segment-test
+        # @return [Hash] with a single entry:
+        #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
+        def segment_update(id, seg_id, opts)
+            _params = {:id => id, :seg_id => seg_id, :opts => opts}
+            return @master.call 'lists/segment-update', _params
+        end
+
         # Save a segment against a list for later use. There is no limit to the number of segments which can be saved. Static Segments <strong>are not</strong> tied to any merge data, interest groups, etc. They essentially allow you to configure an unlimited number of custom segments which will have standard performance. When using proper segments, Static Segments are one of the available options for segmentation just as if you used a merge var (and they can be used with other segmentation options), though performance may degrade at that point.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] name a unique name per list for the segment - 100 byte maximum length, anything longer will throw an error
         # @return [Hash] with a single entry:
         #     - [Int] id the id of the new segment, otherwise an error will be thrown.
@@ -1006,8 +1084,8 @@ module Mailchimp
         end
 
         # Delete a static segment. Note that this will, of course, remove any member affiliations with the segment
-        # @param [String] id the list id to connect to. Get by calling lists()
-        # @param [Int] seg_id the id of the static segment to delete - get from listStaticSegments()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
+        # @param [Int] seg_id the id of the static segment to delete - get from lists/static-segments()
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
         def static_segment_del(id, seg_id)
@@ -1016,13 +1094,12 @@ module Mailchimp
         end
 
         # Add list members to a static segment. It is suggested that you limit batch size to no more than 10,000 addresses per call. Email addresses must exist on the list in order to be included - this <strong>will not</strong> subscribe them to the list!
-        # @param [String] id the list id to connect to. Get by calling lists()
-        # @param [Int] seg_id the id of the static segment to modify - get from listStaticSegments()
-        # @param [Array] batch an array of structs for each address using the following keys:
-        #     - [Hash] email a struct with one of the following keys - failing to provide anything will produce an error relating to the email address. Provide multiples and we'll use the first we see in this same order.
-        #         - [String] email an email address
-        #         - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
-        #         - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
+        # @param [String] id the list id to connect to. Get by calling lists/list()
+        # @param [Int] seg_id the id of the static segment to modify - get from lists/static-segments()
+        # @param [Array] batch an array of structs for   each address using the following keys:
+        #     - [String] email an email address
+        #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
+        #     - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
         # @return [Hash] an array with the results of the operation
         #     - [Int] success_count the total number of successful updates (will include members already in the segment)
         #     - [Array] errors structs for each error including:
@@ -1038,13 +1115,12 @@ module Mailchimp
         end
 
         # Remove list members from a static segment. It is suggested that you limit batch size to no more than 10,000 addresses per call. Email addresses must exist on the list in order to be removed - this <strong>will not</strong> unsubscribe them from the list!
-        # @param [String] id the list id to connect to. Get by calling lists()
-        # @param [Int] seg_id the id of the static segment to delete - get from listStaticSegments()
-        # @param [Array] batch an array of structs for each address using the following keys:
-        #     - [Hash] email a struct with one of the following keys - failing to provide anything will produce an error relating to the email address. Provide multiples and we'll use the first we see in this same order.
-        #         - [String] email an email address
-        #         - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
-        #         - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
+        # @param [String] id the list id to connect to. Get by calling lists/list()
+        # @param [Int] seg_id the id of the static segment to delete - get from lists/static-segments()
+        # @param [Array] batch an array of structs for each address using one of the following keys:
+        #     - [String] email an email address
+        #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
+        #     - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
         # @return [Hash] an array with the results of the operation
         #     - [Int] success_count the total number of successful removals
         #     - [Int] error_count the total number of unsuccessful removals
@@ -1061,8 +1137,8 @@ module Mailchimp
         end
 
         # Resets a static segment - removes <strong>all</strong> members from the static segment. Note: does not actually affect list member data
-        # @param [String] id the list id to connect to. Get by calling lists()
-        # @param [Int] seg_id the id of the static segment to reset  - get from listStaticSegments()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
+        # @param [Int] seg_id the id of the static segment to reset  - get from lists/static-segments()
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
         def static_segment_reset(id, seg_id)
@@ -1071,14 +1147,14 @@ module Mailchimp
         end
 
         # Retrieve all of the Static Segments for a list.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @return [Array] an of structs with data for each static segment
         #     - [Int] id the id of the segment
         #     - [String] name the name for the segment
         #     - [Int] member_count the total number of subscribed members currently in a segment
-        #     - [String] created_date the date/time the segment was created
-        #     - [String] last_update the date/time the segment was last updated (add or del)
-        #     - [String] last_reset the date/time the segment was last reset (ie had all members cleared from it)
+        #     - [String] created_date the date+time the segment was created
+        #     - [String] last_update the date+time the segment was last updated (add or del)
+        #     - [String] last_reset the date+time the segment was last reset (ie had all members cleared from it)
         def static_segments(id)
             _params = {:id => id}
             return @master.call 'lists/static-segments', _params
@@ -1122,7 +1198,7 @@ module Mailchimp
         end
 
         # Unsubscribe the given email address from the list
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [Hash] email a struct with one of the following keys - failing to provide anything will produce an error relating to the email address. Providing multiples and will use the first we see in this same order.
         #     - [String] email an email address
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
@@ -1137,13 +1213,13 @@ module Mailchimp
             return @master.call 'lists/unsubscribe', _params
         end
 
-        # Edit the email address, merge fields, and interest groups for a list member. If you are doing a batch update on lots of users, consider using listBatchSubscribe() with the update_existing and possible replace_interests parameter.
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # Edit the email address, merge fields, and interest groups for a list member. If you are doing a batch update on lots of users, consider using lists/batch-subscribe() with the update_existing and possible replace_interests parameter.
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [Hash] email a struct with one of the following keys - failing to provide anything will produce an error relating to the email address. Providing multiples and will use the first we see in this same order.
         #     - [String] email an email address
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
         #     - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
-        # @param [Array] merge_vars array of new field values to update the member with.  See merge_vars in listSubscribe() for details.
+        # @param [Array] merge_vars array of new field values to update the member with.  See merge_vars in lists/subscribe() for details.
         # @param [String] email_type change the email type preference for the member ("html" or "text").  Leave blank to keep the existing preference (optional)
         # @param [Boolean] replace_interests flag to determine whether we replace the interest groups with the updated groups provided, or we add the provided groups to the member's interest groups (optional, defaults to true)
         # @return [Hash] the ids for this subscriber
@@ -1156,7 +1232,7 @@ module Mailchimp
         end
 
         # Add a new Webhook URL for the given list
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] url a valid URL for the Webhook - it will be validated. note that a url may only exist on a list once.
         # @param [Hash] actions optional a hash of actions to fire this Webhook for
         #     - [Bool] subscribe optional as subscribes occur, defaults to true
@@ -1177,7 +1253,7 @@ module Mailchimp
         end
 
         # Delete an existing Webhook URL from a given list
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [String] url the URL of a Webhook on this list
         # @return [Hash] with a single entry:
         #     - [Bool] complete whether the call worked. reallistically this will always be true as errors will be thrown otherwise.
@@ -1187,7 +1263,7 @@ module Mailchimp
         end
 
         # Return the Webhooks configured for the given list
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @return [Array] of structs for each webhook
         #     - [String] url the URL for this Webhook
         #     - [Hash] actions the possible actions and whether they are enabled
@@ -1213,8 +1289,8 @@ module Mailchimp
         #     - [String] from_name optional - only lists that have a default from name matching this
         #     - [String] from_email optional - only lists that have a default from email matching this
         #     - [String] from_subject optional - only lists that have a default from email matching this
-        #     - [String] created_before optional - only show lists that were created before this date/time  - 24 hour format in <strong>GMT</strong>, eg "2013-12-30 20:30:00"
-        #     - [String] created_after optional - only show lists that were created since this date/time  - 24 hour format in <strong>GMT</strong>, eg "2013-12-30 20:30:00"
+        #     - [String] created_before optional - only show lists that were created before this date+time  - 24 hour format in <strong>GMT</strong>, eg "2013-12-30 20:30:00"
+        #     - [String] created_after optional - only show lists that were created since this date+time  - 24 hour format in <strong>GMT</strong>, eg "2013-12-30 20:30:00"
         #     - [Boolean] exact optional - flag for whether to filter on exact values when filtering, or search within content for filter values - defaults to true
         # @param [Int] start optional - control paging of lists, start results at this list #, defaults to 1st page of data  (page 0)
         # @param [Int] limit optional - control paging of lists, number of lists to return with each call, defaults to 25 (max=100)
@@ -1273,7 +1349,7 @@ module Mailchimp
         end
 
         # Get the content (both html and text) for a campaign either as it would appear in the campaign archive or as the raw, original content
-        # @param [String] cid the campaign id to get content for (can be gathered using campaign/list())
+        # @param [String] cid the campaign id to get content for (can be gathered using campaigns/list())
         # @param [Hash] options various options to control this call
         #     - [String] view optional one of "archive" (default), "preview" (like our popup-preview) or "raw"
         #     - [Hash] email optional if provided, view is "archive" or "preview", the campaign's list still exists, and the requested record is subscribed to the list. the returned content will be populated with member data populated. a struct with one of the following keys - failing to provide anything will produce an error relating to the email address. Providing multiples and will use the first we see in this same order.
@@ -1291,7 +1367,7 @@ module Mailchimp
         # Create a new draft campaign to send. You <strong>can not</strong> have more than 32,000 campaigns in your account.
         # @param [String] type the Campaign Type to create - one of "regular", "plaintext", "absplit", "rss", "auto"
         # @param [Hash] options a struct of the standard options for this campaign :
-        #     - [String] list_id the list to send this campaign to- get lists using lists()
+        #     - [String] list_id the list to send this campaign to- get lists using lists/list()
         #     - [String] subject the subject line for your campaign message
         #     - [String] from_email the From: email address for your campaign message
         #     - [String] from_name the From: name for your campaign message (not an email address)
@@ -1299,7 +1375,7 @@ module Mailchimp
         #     - [Int] template_id optional - use this user-created template to generate the HTML content of the campaign (takes precendence over other template options)
         #     - [Int] gallery_template_id optional - use a template from the public gallery to generate the HTML content of the campaign (takes precendence over base template options)
         #     - [Int] base_template_id optional - use this a base/start-from-scratch template to generate the HTML content of the campaign
-        #     - [Int] folder_id optional - automatically file the new campaign in the folder_id passed. Get using folders() - note that Campaigns and Autoresponders have separate folder setupsn
+        #     - [Int] folder_id optional - automatically file the new campaign in the folder_id passed. Get using folders/list() - note that Campaigns and Autoresponders have separate folder setups
         #     - [Hash] tracking optional - set which recipient actions will be tracked. Click tracking can not be disabled for Free accounts.
         #         - [Bool] opens whether to track opens, defaults to true
         #         - [Bool] html_clicks whether to track clicks in HTML content, defaults to true
@@ -1334,7 +1410,7 @@ module Mailchimp
         #     - [String] url to have us pull in content from a URL. Note, this will override any other content options - for lists with Email Format options, you'll need to turn on generate_text as well
         #     - [String] archive to send a Base64 encoded archive file for us to import all media from. Note, this will override any other content options - for lists with Email Format options, you'll need to turn on generate_text as well
         #     - [String] archive_type optional - only necessary for the "archive" option. Supported formats are: zip, tar.gz, tar.bz2, tar, tgz, tbz . If not included, we will default to zip
-        # @param [Hash] segment_opts if you wish to do Segmentation with this campaign this array should contain: see campaignSegmentTest(). It's suggested that you test your options against campaignSegmentTest().
+        # @param [Hash] segment_opts if you wish to do Segmentation with this campaign this array should contain: see campaigns/segment-test(). It's suggested that you test your options against campaigns/segment-test().
         # @param [Hash] type_opts various extra options based on the campaign type
         #     - [Hash] rss For RSS Campaigns this, struct should contain:
         #         - [String] url the URL to pull RSS content from - it will be verified and must exist
@@ -1351,7 +1427,7 @@ module Mailchimp
         #             - [Bool] 6 optional Saturday, defaults to true
         #             - [Bool] 7 optional Sunday, defaults to true
         #     - [Hash] absplit For A/B Split campaigns, this struct should contain:
-        #         - [String] split_test The values to segment based on. Currently, one of: "subject", "from_name", "schedule". NOTE, for "schedule", you will need to call campaignSchedule() separately!
+        #         - [String] split_test The values to segment based on. Currently, one of: "subject", "from_name", "schedule". NOTE, for "schedule", you will need to call campaigns/schedule() separately!
         #         - [String] pick_winner How the winner will be picked, one of: "opens" (by the open_rate), "clicks" (by the click rate), "manual" (you pick manually)
         #         - [Int] wait_units optional the default time unit to wait before auto-selecting a winner - use "3600" for hours, "86400" for days. Defaults to 86400.
         #         - [Int] wait_time optional the number of units to wait before auto-selecting a winner - defaults to 1, so if not set, a winner will be selected after 1 Day.
@@ -1399,9 +1475,9 @@ module Mailchimp
         # @param [Hash] filters a struct of filters to apply to this query - all are optional:
         #     - [String] campaign_id optional - return the campaign using a know campaign_id.  Accepts multiples separated by commas when not using exact matching.
         #     - [String] parent_id optional - return the child campaigns using a known parent campaign_id.  Accepts multiples separated by commas when not using exact matching.
-        #     - [String] list_id optional - the list to send this campaign to - get lists using lists(). Accepts multiples separated by commas when not using exact matching.
-        #     - [Int] folder_id optional - only show campaigns from this folder id - get folders using campaignFolders(). Accepts multiples separated by commas when not using exact matching.
-        #     - [Int] template_id optional - only show campaigns using this template id - get templates using templates(). Accepts multiples separated by commas when not using exact matching.
+        #     - [String] list_id optional - the list to send this campaign to - get lists using lists/list(). Accepts multiples separated by commas when not using exact matching.
+        #     - [Int] folder_id optional - only show campaigns from this folder id - get folders using folders/list(). Accepts multiples separated by commas when not using exact matching.
+        #     - [Int] template_id optional - only show campaigns using this template id - get templates using templates/list(). Accepts multiples separated by commas when not using exact matching.
         #     - [String] status optional - return campaigns of a specific status - one of "sent", "save", "paused", "schedule", "sending". Accepts multiples separated by commas when not using exact matching.
         #     - [String] type optional - return campaigns of a specific type - one of "regular", "plaintext", "absplit", "rss", "auto". Accepts multiples separated by commas when not using exact matching.
         #     - [String] from_name optional - only show campaigns that have this "From Name"
@@ -1447,13 +1523,19 @@ module Mailchimp
         #         - [Boolean] timewarp Whether or not the campaign used Timewarp
         #         - [String] timewarp_schedule The time, in GMT, that the Timewarp campaign is being sent. For A/B Split campaigns, this is blank and is instead in their schedule_a and schedule_b in the type_opts array
         #         - [String] parent_id the unique id of the parent campaign (currently only valid for rss children)
+        #         - [String] tests_sent tests sent
+        #         - [String] tests_remain test sends remaining
         #         - [Hash] tracking the various tracking options used
         #             - [Boolean] html_clicks whether or not tracking for html clicks was enabled.
         #             - [Boolean] text_clicks whether or not tracking for text clicks was enabled.
         #             - [Boolean] opens whether or not opens tracking was enabled.
         #         - [String] segment_text a string marked-up with HTML explaining the segment used for the campaign in plain English
-        #         - [Array] segment_opts the segment used for the campaign - can be passed to campaigns/segment-test or campaigns/create
-        #         - [Hash] type_opts the type-specific options for the campaign - can be passed to campaigns/create
+        #         - [Array] segment_opts the segment used for the campaign - can be passed to campaigns/segment-test or campaigns/create()
+        #         - [Hash] saved_segment if a saved segment was used (match+conditions returned above):
+        #             - [Hash] id the saved segment id
+        #             - [Hash] type the saved segment type
+        #             - [Hash] name the saved segment name
+        #         - [Hash] type_opts the type-specific options for the campaign - can be passed to campaigns/create()
         #         - [Int] comments_total total number of comments left on this campaign
         #         - [Int] comments_unread total number of unread comments for this campaign based on the login the apikey belongs to
         #         - [Hash] summary if available, the basic aggregate stats returned by reports/summary
@@ -1530,8 +1612,9 @@ module Mailchimp
         end
 
         # Allows one to test their segmentation rules before creating a campaign using them
-        # @param [String] list_id the list to test segmentation on - get lists using lists()
-        # @param [Hash] options with 2 keys:
+        # @param [String] list_id the list to test segmentation on - get lists using lists/list()
+        # @param [Hash] options with 1 or 2 keys:
+        #     - [String] saved_segment_id a saved segment id from lists/segments() - this will take precendence, otherwise the match+conditions are required.
         #     - [String] match controls whether to use AND or OR when applying your options - expects "<strong>any</strong>" (for OR) or "<strong>all</strong>" (for AND)
         #     - [Array] conditions of up to 5 structs for different criteria to apply while segmenting. Each criteria row must contain 3 keys - "<strong>field</strong>", "<strong>op</strong>", and "<strong>value</strong>" - and possibly a fourth, "<strong>extra</strong>", based on these definitions:
         # @return [Hash] with a single entry:
@@ -1562,7 +1645,7 @@ module Mailchimp
         end
 
         # Get the HTML template content sections for a campaign. Note that this <strong>will</strong> return very jagged, non-standard results based on the template a campaign is using. You only want to use this if you want to allow editing template sections in your application.
-        # @param [String] cid the campaign id to get content for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to get content for (can be gathered using campaigns/list())
         # @return [Hash] content containing all content section for the campaign - section name are dependent upon the template used and thus can't be documented
         def template_content(cid)
             _params = {:cid => cid}
@@ -1578,10 +1661,10 @@ module Mailchimp
             return @master.call 'campaigns/unschedule', _params
         end
 
-        # Update just about any setting besides type for a campaign that has <em>not</em> been sent. See campaign/create for details. Caveats:<br/><ul class='bullets'> <li>If you set a new list_id, all segmentation options will be deleted and must be re-added.</li> <li>If you set template_id, you need to follow that up by setting it's 'content'</li> <li>If you set segment_opts, you should have tested your options against campaign/segment-test().</li> <li>To clear/unset segment_opts, pass an empty string or array as the value. Various wrappers may require one or the other.</li> </ul>
+        # Update just about any setting besides type for a campaign that has <em>not</em> been sent. See campaigns/create() for details. Caveats:<br/><ul class='bullets'> <li>If you set a new list_id, all segmentation options will be deleted and must be re-added.</li> <li>If you set template_id, you need to follow that up by setting it's 'content'</li> <li>If you set segment_opts, you should have tested your options against campaigns/segment-test().</li> <li>To clear/unset segment_opts, pass an empty string or array as the value. Various wrappers may require one or the other.</li> </ul>
         # @param [String] cid the Campaign Id to update
-        # @param [String] name the parameter name ( see campaign/create ). This will be that parameter name (options, content, segment_opts) except "type_opts", which will be the name of the type - rss, auto, etc. The campaign "type" can not be changed.
-        # @param [Array] value an appropriate set of values for the parameter ( see campaign/create ). For additional parameters, this is the same value passed to them.
+        # @param [String] name the parameter name ( see campaigns/create() ). This will be that parameter name (options, content, segment_opts) except "type_opts", which will be the name of the type - rss, auto, etc. The campaign "type" can not be changed.
+        # @param [Array] value an appropriate set of values for the parameter ( see campaigns/create() ). For additional parameters, this is the same value passed to them.
         # @return [Hash] updated campaign details and any errors
         #     - [Hash] data the update campaign details - will return same data as single campaign from campaigns/list()
         #     - [Array] errors for "options" only - structs containing:
@@ -1629,7 +1712,7 @@ module Mailchimp
         end
 
         # Add VIPs (previously called Golden Monkeys)
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [Array] emails an array of up to 50 email address structs to add, each with with one of the following keys
         #     - [String] email an email address - for new subscribers obviously this should be used
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
@@ -1655,7 +1738,7 @@ module Mailchimp
         end
 
         # Remove VIPs - this does not affect list membership
-        # @param [String] id the list id to connect to. Get by calling lists()
+        # @param [String] id the list id to connect to. Get by calling lists/list()
         # @param [Array] emails an array of up to 50 email address structs to remove, each with with one of the following keys
         #     - [String] email an email address - for new subscribers obviously this should be used
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
@@ -1703,7 +1786,7 @@ module Mailchimp
         end
 
         # Get all email addresses that complained about a given campaign
-        # @param [String] cid the campaign id to pull abuse reports for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull abuse reports for (can be gathered using campaigns/list())
         # @param [Hash] opts various options for controlling returned data
         #     - [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
         #     - [Int] limit optional for large data sets, the number of results to return - defaults to 25, upper limit set at 100
@@ -1720,7 +1803,7 @@ module Mailchimp
         end
 
         # Retrieve the text presented in our app for how a campaign performed and any advice we may have for you - best suited for display in customized reports pages. Note: some messages will contain HTML - clean tags as necessary
-        # @param [String] cid the campaign id to pull advice text for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull advice text for (can be gathered using campaigns/list())
         # @return [Array] of structs for advice on the campaign's performance, each containing:
         #     - [String] msg the advice message
         #     - [String] type the "type" of the message. one of: negative, positive, or neutral
@@ -1730,14 +1813,14 @@ module Mailchimp
         end
 
         # Retrieve the most recent full bounce message for a specific email address on the given campaign. Messages over 30 days old are subject to being removed
-        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns/list())
         # @param [Hash] email a struct with one of the following keys - failing to provide anything will produce an error relating to the email address. Providing multiples and will use the first we see in this same order.
         #     - [String] email an email address - this is recommended for this method
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
         #     - [String] leid the list email id (previously called web_id) for a list-member-info type call. this doesn't change when the email address changes
         # @return [Hash] the full bounce message for this email+campaign along with some extra data.
         #     - [String] date date the bounce was received and processed
-        #     - [Hash] member the member record as returned by lists/member-info
+        #     - [Hash] member the member record as returned by lists/member-info()
         #     - [String] message the entire bounce message received
         def bounce_message(cid, email)
             _params = {:cid => cid, :email => email}
@@ -1745,7 +1828,7 @@ module Mailchimp
         end
 
         # Retrieve the full bounce messages for the given campaign. Note that this can return very large amounts of data depending on how large the campaign was and how much cruft the bounce provider returned. Also, messages over 30 days old are subject to being removed
-        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns/list())
         # @param [Hash] opts various options for controlling returned data
         #     - [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
         #     - [Int] limit optional for large data sets, the number of results to return - defaults to 25, upper limit set at 100
@@ -1754,7 +1837,7 @@ module Mailchimp
         #     - [Int] total that total number of bounce messages for the campaign
         #     - [Array] data structs containing the data for this page
         #         - [String] date date the bounce was received and processed
-        #         - [Hash] member the member record as returned by lists/member-info
+        #         - [Hash] member the member record as returned by lists/member-info()
         #         - [String] message the entire bounce message received
         def bounce_messages(cid, opts=[])
             _params = {:cid => cid, :opts => opts}
@@ -1762,7 +1845,7 @@ module Mailchimp
         end
 
         # Return the list of email addresses that clicked on a given url, and how many times they clicked
-        # @param [String] cid the campaign id to get click stats for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to get click stats for (can be gathered using campaigns/list())
         # @param [Int] tid the "tid" for the URL from reports/clicks
         # @param [Hash] opts various options for controlling returned data
         #     - [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
@@ -1772,7 +1855,7 @@ module Mailchimp
         # @return [Hash] containing the total records matched and the specific records for this page
         #     - [Int] total the total number of records matched
         #     - [Array] data structs for each email addresses that click the requested url
-        #         - [Hash] member the member record as returned by lists/member-info
+        #         - [Hash] member the member record as returned by lists/member-info()
         #         - [Int] clicks Total number of times the URL was clicked by this email address
         def click_detail(cid, tid, opts=[])
             _params = {:cid => cid, :tid => tid, :opts => opts}
@@ -1780,7 +1863,7 @@ module Mailchimp
         end
 
         # The urls tracked and their click counts for a given campaign.
-        # @param [String] cid the campaign id to pull stats for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull stats for (can be gathered using campaigns/list())
         # @return [Hash] including:
         #     - [Array] total structs for each url tracked for the full campaign
         #         - [String] url the url being tracked - urls are tracked individually, so duplicates can exist with vastly different stats
@@ -1808,8 +1891,8 @@ module Mailchimp
             return @master.call 'reports/clicks', _params
         end
 
-        # Retrieve the Ecommerce Orders tracked by campaignEcommOrderAdd()
-        # @param [String] cid the campaign id to pull orders for for (can be gathered using campaigns())
+        # Retrieve the Ecommerce Orders tracked by ecomm/order-add()
+        # @param [String] cid the campaign id to pull orders for for (can be gathered using campaigns/list())
         # @param [Hash] opts various options for controlling returned data
         #     - [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
         #     - [Int] limit optional for large data sets, the number of results to return - defaults to 25, upper limit set at 100
@@ -1820,7 +1903,7 @@ module Mailchimp
         #     - [String] store_id the store id generated by the plugin used to uniquely identify a store
         #     - [String] store_name the store name collected by the plugin - often the domain name
         #     - [String] order_id the internal order id the store tracked this order by
-        #     - [Hash] member the member record as returned by lists/member-info that received this campaign and is associated with this order
+        #     - [Hash] member the member record as returned by lists/member-info() that received this campaign and is associated with this order
         #     - [Double] order_total the order total
         #     - [Double] tax_total the total tax for the order (if collected)
         #     - [Double] ship_total the shipping total for the order (if collected)
@@ -1840,7 +1923,7 @@ module Mailchimp
         end
 
         # Retrieve the eepurl stats from the web/Twitter mentions for this campaign
-        # @param [String] cid the campaign id to pull stats for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull stats for (can be gathered using campaigns/list())
         # @return [Hash] containing tweets, retweets, clicks, and referrer related to using the campaign's eepurl
         #     - [Hash] twitter various Twitter related stats
         #         - [Int] tweets Total number of tweets seen
@@ -1873,7 +1956,7 @@ module Mailchimp
         end
 
         # Given a campaign and email address, return the entire click and open history with timestamps, ordered by time. If you need to dump the full activity for a campaign and/or get incremental results, you should use the <a href="http://apidocs.mailchimp.com/export/1.0/campaignsubscriberactivity.func.php" targret="_new">campaignSubscriberActivity Export API method</a>, <strong>not</strong> this, especially for large campaigns.
-        # @param [String] cid the campaign id to get stats for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to get stats for (can be gathered using campaigns/list())
         # @param [Array] emails an array of up to 50 email address struct to retrieve activity information for
         #     - [String] email an email address
         #     - [String] euid the unique id for an email address (not list related) - the email "id" returned from listMemberInfo, Webhooks, Campaigns, etc.
@@ -1892,7 +1975,7 @@ module Mailchimp
         #             - [String] email the email address added
         #             - [String] euid the email unique id
         #             - [String] leid the list member's truly unique id
-        #         - [Hash] member the member record as returned by lists/member-info
+        #         - [Hash] member the member record as returned by lists/member-info()
         #         - [Array] activity an array of structs containing the activity, including:
         #             - [String] action The action name - either open or click
         #             - [String] timestamp The date/time of the action (GMT)
@@ -1904,38 +1987,38 @@ module Mailchimp
         end
 
         # Retrieve the list of email addresses that did not open a given campaign
-        # @param [String] cid the campaign id to get no opens for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to get no opens for (can be gathered using campaigns/list())
         # @param [Hash] opts various options for controlling returned data
         #     - [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
         #     - [Int] limit optional for large data sets, the number of results to return - defaults to 25, upper limit set at 100
         # @return [Hash] a total of all matching emails and the specific emails for this page
         #     - [Int] total the total number of members who didn't open the campaign
-        #     - [Array] data structs for each campaign member matching as returned by lists/member-info
+        #     - [Array] data structs for each campaign member matching as returned by lists/member-info()
         def not_opened(cid, opts=[])
             _params = {:cid => cid, :opts => opts}
             return @master.call 'reports/not-opened', _params
         end
 
         # Retrieve the list of email addresses that opened a given campaign with how many times they opened
-        # @param [String] cid the campaign id to get opens for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to get opens for (can be gathered using campaigns/list())
         # @param [Hash] opts various options for controlling returned data
         #     - [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
         #     - [Int] limit optional for large data sets, the number of results to return - defaults to 25, upper limit set at 100
         #     - [String] sort_field optional the data to sort by - "opened" (order opens occurred, default) or "opens" (total number of opens). Invalid fields will fall back on the default.
         #     - [String] sort_dir optional the direct - ASC or DESC. defaults to ASC (case insensitive)
-        # @return [Array] array containing the total records matched and the specific records for this page
+        # @return [Hash] containing the total records matched and the specific records for this page
         #     - [Int] total the total number of records matched
         #     - [Array] data structs for the actual opens data, including:
-        #         - [Hash] member the member record as returned by lists/member-info
+        #         - [Hash] member the member record as returned by lists/member-info()
         #         - [Int] opens Total number of times the campaign was opened by this email address
         def opened(cid, opts=[])
             _params = {:cid => cid, :opts => opts}
             return @master.call 'reports/opened', _params
         end
 
-        # Get the top 5 performing email domains for this campaign. Users wanting more than 5 should use campaign campaignEmailStatsAIM() or campaignEmailStatsAIMAll() and generate any additional stats they require.
-        # @param [String] cid the campaign id to pull email domain performance for (can be gathered using campaigns())
-        # @return [Array] domains stricts for each email domains and their associated stats
+        # Get the top 5 performing email domains for this campaign. Users wanting more than 5 should use campaign reports/member-activity() or campaignEmailStatsAIMAll() and generate any additional stats they require.
+        # @param [String] cid the campaign id to pull email domain performance for (can be gathered using campaigns/list())
+        # @return [Array] domains structs for each email domains and their associated stats
         #     - [String] domain Domain name or special "Other" to roll-up stats past 5 domains
         #     - [Int] total_sent Total Email across all domains - this will be the same in every row
         #     - [Int] emails Number of emails sent to this domain
@@ -1955,12 +2038,12 @@ module Mailchimp
         end
 
         # Retrieve the countries/regions and number of opens tracked for each. Email address are not returned.
-        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns/list())
         # @return [Array] an array of country structs where opens occurred
         #     - [String] code The ISO3166 2 digit country code
         #     - [String] name A version of the country name, if we have it
         #     - [Int] opens The total number of opens that occurred in the country
-        #     - [Array] regions struct of data for each sub-region in the country
+        #     - [Array] regions structs of data for each sub-region in the country
         #         - [String] code An internal code for the region. When this is blank, it indicates we know the country, but not the region
         #         - [String] name The name of the region, if we have one. For blank "code" values, this will be "Rest of Country"
         #         - [Int] opens The total number of opens that occurred in the country
@@ -1970,7 +2053,7 @@ module Mailchimp
         end
 
         # Retrieve the Google Analytics data we've collected for this campaign. Note, requires Google Analytics Add-on to be installed and configured.
-        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns/list())
         # @return [Array] of structs for analytics we've collected for the passed campaign.
         #     - [Int] visits number of visits
         #     - [Int] pages number of page views
@@ -1991,7 +2074,7 @@ module Mailchimp
         end
 
         # Get email addresses the campaign was sent to
-        # @param [String] cid the campaign id to pull members for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull members for (can be gathered using campaigns/list())
         # @param [Hash] opts various options for controlling returned data
         #     - [String] status optional the status to pull - one of 'sent', 'hard' (bounce), or 'soft' (bounce). By default, all records are returned
         #     - [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
@@ -1999,7 +2082,7 @@ module Mailchimp
         # @return [Hash] a total of all matching emails and the specific emails for this page
         #     - [Int] total the total number of members for the campaign and status
         #     - [Array] data structs for each campaign member matching
-        #         - [Hash] member the member record as returned by lists/member-info
+        #         - [Hash] member the member record as returned by lists/member-info()
         #         - [String] status the status of the send - one of 'sent', 'hard', 'soft'
         #         - [String] absplit_group if this was an absplit campaign, one of 'a','b', or 'winner'
         #         - [String] tz_group if this was an timewarp campaign the timezone GMT offset the member was included in
@@ -2009,7 +2092,7 @@ module Mailchimp
         end
 
         # Get the URL to a customized <a href="http://eepurl.com/gKmL" target="_blank">VIP Report</a> for the specified campaign and optionally send an email to someone with links to it. Note subsequent calls will overwrite anything already set for the same campign (eg, the password)
-        # @param [String] cid the campaign id to share a report for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to share a report for (can be gathered using campaigns/list())
         # @param [Array] opts optional various parameters which can be used to configure the shared report
         #     - [String] to_email optional - optional, comma delimited list of email addresses to share the report with - no value means an email will not be sent
         #     - [Int] theme_id optional - either a global or a user-specific theme id. Currently this needs to be pulled out of either the Share Report or Cobranding web views by grabbing the "theme" attribute from the list presented.
@@ -2025,7 +2108,7 @@ module Mailchimp
         end
 
         # Retrieve relevant aggregate campaign statistics (opens, bounces, clicks, etc.)
-        # @param [String] cid the campaign id to pull stats for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull stats for (can be gathered using campaigns/list())
         # @return [Hash] the statistics for this campaign
         #     - [Int] syntax_errors Number of email addresses in campaign that had syntactical errors.
         #     - [Int] hard_bounces Number of email addresses in campaign that hard bounced.
@@ -2045,6 +2128,14 @@ module Mailchimp
         #     - [Int] unique_likes total number of unique likes (Facebook)
         #     - [Int] recipient_likes total number of recipients who liked (Facebook) the campaign
         #     - [Int] facebook_likes total number of likes (Facebook) that came from Facebook
+        #     - [Hash] industry Various rates/percentages for the account's selected industry - empty otherwise. These will vary across calls, do not use them for anything important.
+        #         - [String] type the selected industry
+        #         - [Float] open_rate industry open rate
+        #         - [Float] click_rate industry click rate
+        #         - [Float] bounce_rate industry bounce rate
+        #         - [Float] unopen_rate industry unopen rate
+        #         - [Float] unsub_rate industry unsub rate
+        #         - [Float] abuse_rate industry abuse rate
         #     - [Hash] absplit If this was an absplit campaign, stats for the A and B groups will be returned - otherwise this is empty
         #         - [Int] bounces_a bounces for the A group
         #         - [Int] bounces_b bounces for the B group
@@ -2085,14 +2176,14 @@ module Mailchimp
         end
 
         # Get all unsubscribed email addresses for a given campaign
-        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns())
+        # @param [String] cid the campaign id to pull bounces for (can be gathered using campaigns/list())
         # @param [Hash] opts various options for controlling returned data
         #     - [Int] start optional for large data sets, the page number to start at - defaults to 1st page of data  (page 0)
         #     - [Int] limit optional for large data sets, the number of results to return - defaults to 25, upper limit set at 100
         # @return [Hash] a total of all unsubscribed emails and the specific members for this page
         #     - [Int] total the total number of unsubscribes for the campaign
         #     - [Array] data structs for the email addresses that unsubscribed
-        #         - [String] member the member that unsubscribed as returned by lists/member-info
+        #         - [String] member the member that unsubscribed as returned by lists/member-info()
         #         - [String] reason the reason collected for the unsubscribe. If populated, one of 'NORMAL','NOSIGNUP','INAPPROPRIATE','SPAM','OTHER'
         #         - [String] reason_text if the reason is OTHER, the text entered.
         def unsubscribes(cid, opts=[])
